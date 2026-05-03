@@ -5,37 +5,61 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/Enemy.h"
-#include "Characters/EEnemyState.h"
 #include "BossCharacter.generated.h"
+
+class UBehaviorTree;
+class UStatsComponent;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyDeathSignature, ABossCharacter*, DeadEnemy);
 
 UCLASS()
 class FINALUNREAL_API ABossCharacter : public ACharacter, public IEnemy
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere)
-	TEnumAsByte<EEnemyState> InitialState;
-
-
-	class UBlackboardComponent* BlackboardComp;
-
 public:
-	// Sets default values for this character's properties
 	ABossCharacter();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class UStatsComponent* StatsComp;
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components")
+	UStatsComponent* StatsComp;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="AI")
+	UBehaviorTree* BehaviorTreeAsset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat")
+	float AttackDamage = 10.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat")
+	float AttackRange = 200.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Combat")
+	float AttackCooldown = 1.5f;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnEnemyDeathSignature OnEnemyDied;
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	UFUNCTION()
+	void HandleDeath();
 
-	// Called to bind functionality to input
+	float LastAttackTime = -10.f;
+
+	bool bIsDead = false;
+
+public:	
+	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	UFUNCTION(BlueprintCallable, Category="Combat")
+	void AttackTarget(AActor* Target);
+
+	UFUNCTION(BlueprintPure)
+	bool IsDead() const { return bIsDead; }
 
 	UFUNCTION(BlueprintCallable)
 	void DetectPawn(APawn* DetectedPawn, APawn* PawnToDetect);

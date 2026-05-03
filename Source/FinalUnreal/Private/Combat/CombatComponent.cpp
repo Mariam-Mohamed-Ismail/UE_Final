@@ -5,6 +5,9 @@
 #include "GameFramework/Character.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Interfaces/MainPlayer.h"
+#include "Combat/TraceComponent.h"
+#include "TimerManager.h"
+#include "Engine/World.h"
 // Sets default values for this component's properties
 UCombatComponent::UCombatComponent()
 {
@@ -52,15 +55,54 @@ void UCombatComponent::ComboAttack()
 
 	bCanAttack = false;
 
-	CharacterRef->PlayAnimMontage(AttackAnimations[ComboCounter]);
+	if (AttackAnimations.Num() > 0 && AttackAnimations.IsValidIndex(ComboCounter) && AttackAnimations[ComboCounter])
+	{
+		CharacterRef->PlayAnimMontage(AttackAnimations[ComboCounter]);
+	}
 
 	ComboCounter++;
 
 	int MaxCombo{ AttackAnimations.Num() };
-
-	ComboCounter = UKismetMathLibrary::Wrap(ComboCounter, -1, (MaxCombo-1));
+	if (MaxCombo > 0)
+	{
+		ComboCounter = UKismetMathLibrary::Wrap(ComboCounter, -1, (MaxCombo - 1));
+	}
+	else
+	{
+		ComboCounter = 0;
+	}
 
 	OnAttackPerformedDelegat.Broadcast(StaminaCost);
+
+	// Drive the trace window from input (independent of animation notifies).
+	if (UTraceComponent* Trace = CharacterRef->FindComponentByClass<UTraceComponent>())
+	{
+		Trace->bIsAttacking = true;
+		Trace->HandleResetAttack(); // clear ignore list at the start of each swing
+
+		FTimerHandle CloseHandle;
+		TWeakObjectPtr<UTraceComponent> WeakTrace(Trace);
+		GetWorld()->GetTimerManager().SetTimer(
+			CloseHandle,
+			FTimerDelegate::CreateLambda([this, WeakTrace]()
+			{
+				if (WeakTrace.IsValid())
+				{
+					WeakTrace->bIsAttacking = false;
+					WeakTrace->HandleResetAttack();
+				}
+				bCanAttack = true;
+			}),
+			0.4f,
+			false
+		);
+	}
+	else
+	{
+		// No trace component — still allow next attack.
+		FTimerHandle CloseHandle;
+		GetWorld()->GetTimerManager().SetTimer(CloseHandle, FTimerDelegate::CreateLambda([this]() { bCanAttack = true; }), 0.4f, false);
+	}
 }
 
 void UCombatComponent::HandleResetAttack()

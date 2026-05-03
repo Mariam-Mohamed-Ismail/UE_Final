@@ -23,8 +23,6 @@ void UTraceComponent::BeginPlay()
 	Super::BeginPlay();
 
 	SkeletalComp = GetOwner()->FindComponentByClass<USkeletalMeshComponent>();
-
-	
 }
 
 
@@ -35,15 +33,37 @@ void UTraceComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 
 	if (!bIsAttacking) { return; }
 
-	FVector StartSocketLocation { SkeletalComp->GetSocketLocation(Start) };
-	FVector EndSocketLocation{ SkeletalComp->GetSocketLocation(End) };
-	FQuat ShapeRotation{ SkeletalComp->GetSocketQuaternion(Rotation) };	
+	FVector StartSocketLocation;
+	FVector EndSocketLocation;
+	FQuat ShapeRotation;
+
+	const bool bHasStartSocket = !Start.IsNone() && SkeletalComp && SkeletalComp->DoesSocketExist(Start);
+	const bool bHasEndSocket   = !End.IsNone()   && SkeletalComp && SkeletalComp->DoesSocketExist(End);
+
+	if (bHasStartSocket && bHasEndSocket)
+	{
+		StartSocketLocation = SkeletalComp->GetSocketLocation(Start);
+		EndSocketLocation = SkeletalComp->GetSocketLocation(End);
+		ShapeRotation = (!Rotation.IsNone() && SkeletalComp->DoesSocketExist(Rotation))
+			? SkeletalComp->GetSocketQuaternion(Rotation)
+			: GetOwner()->GetActorQuat();
+	}
+	else
+	{
+		// Fallback: sweep a fixed range in front of the character.
+		const FVector ActorLoc = GetOwner()->GetActorLocation();
+		const FVector Forward = GetOwner()->GetActorForwardVector();
+		StartSocketLocation = ActorLoc + Forward * 50.f;
+		EndSocketLocation   = ActorLoc + Forward * 220.f;
+		ShapeRotation = GetOwner()->GetActorQuat();
+	}
 
 	TArray<FHitResult> OutResults;
 	double WeaponDistance{
 		FVector::Distance(StartSocketLocation, EndSocketLocation)
 	};
-	FVector BoxHalfExtent{ BoxCollisionLength,  BoxCollisionLength,WeaponDistance };
+	const double Width = FMath::Max(BoxCollisionLength, 80.0);
+	FVector BoxHalfExtent{ Width, Width, WeaponDistance };
 	BoxHalfExtent /= 2;
 	FCollisionShape Box{ FCollisionShape::MakeBox(BoxHalfExtent) };
 	FCollisionQueryParams IgnoreParams{
@@ -55,7 +75,7 @@ void UTraceComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 		StartSocketLocation,
 		EndSocketLocation,
 		ShapeRotation,
-		ECollisionChannel::ECC_GameTraceChannel1,
+		ECollisionChannel::ECC_Pawn,
 		Box,
 		IgnoreParams
 	) };

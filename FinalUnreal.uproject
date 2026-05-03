@@ -10,8 +10,7 @@
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
 				"CoreUObject",
-				"Engine",
-				"AIModule"
+				"Engine"
 			]
 		}
 	],
@@ -25,6 +24,10 @@
 		},
 		{
 			"Name": "GameplayStateTree",
+			"Enabled": true
+		},
+		{
+			"Name": "Aura",
 			"Enabled": true
 		}
 	]

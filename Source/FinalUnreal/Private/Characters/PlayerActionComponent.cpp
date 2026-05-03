@@ -2,8 +2,8 @@
 
 
 #include "Characters/PlayerActionComponent.h"
-#include "Interfaces/MainPlayer.h"
 #include "GameFramework/Character.h"
+#include "Interfaces/MainPlayer.h"
 #include "GameFramework/CharacterMovementComponent.h"
 // Sets default values for this component's properties
 UPlayerActionComponent::UPlayerActionComponent()
@@ -43,17 +43,11 @@ void UPlayerActionComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 void UPlayerActionComponent::Sprint()
 {
-	if(!IPlayerRef->HasEnoughStamina(SprintCost))
-	{
-		Walk();
-		return;
-	}
-
-	if (MovementComp->Velocity.Equals(FVector::ZeroVector, 1)) { return;  }
+	if (MovementComp == nullptr) { return; }
 
 	MovementComp->MaxWalkSpeed = SprintSpeed;
 
-	OnSprintDelegate.Broadcast(SprintCost);
+	
 }
 
 void UPlayerActionComponent::Walk()

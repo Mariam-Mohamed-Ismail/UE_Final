@@ -7,11 +7,24 @@
 #include "Characters/EStat.h"
 #include "StatsComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeathSignature);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChangedSignature, float, NewHealth, float, MaxHealth);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FINALUNREAL_API UStatsComponent : public UActorComponent
 {
 	GENERATED_BODY()
+
+public:	
+	UStatsComponent();
+
+protected:
+	virtual void BeginPlay() override;
+
+	bool bHasDied = false;
+
+public:	
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	UPROPERTY(EditAnywhere)
 	double StaminaRegenRate{ 10.0 };
@@ -20,26 +33,17 @@ class FINALUNREAL_API UStatsComponent : public UActorComponent
 	bool bCanRegen{ true };
 
 	UPROPERTY(EditAnywhere)
-	float StaminaDelayDuration{2.0f };
-
-
-
-public:	
-	// Sets default values for this component's properties
-	UStatsComponent();
-
-
-	UPROPERTY(EditAnywhere)
+	float StaminaDelayDuration{ 2.0f };
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TMap<TEnumAsByte<EStat>, float> Stats;
 
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
+	UPROPERTY(BlueprintAssignable)
+	FOnDeathSignature OnDeath;
 
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
+	UPROPERTY(BlueprintAssignable)
+	FOnHealthChangedSignature OnHealthChanged;
+	
 	UFUNCTION(BlueprintCallable)
 	void ReduceHealth(float Amount);
 
@@ -51,5 +55,13 @@ public:
 
 	UFUNCTION()
 	void EnableRegen();
-		
+
+	UFUNCTION(BlueprintPure)
+	float GetHealth() const;
+
+	UFUNCTION(BlueprintPure)
+	float GetMaxHealth() const;
+
+	UFUNCTION(BlueprintPure)
+	bool IsDead() const { return bHasDied; }
 };

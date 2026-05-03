@@ -7,18 +7,39 @@
 #include "PlayerActionComponent.generated.h"
 
 
+
 DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(
-    FOnSprintSignature, 
+	FOnSprintSignature,
 	UPlayerActionComponent,
 	OnSprintDelegate,
-    float, 
-    Cost
+	float,
+	Cost
 );
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FINALUNREAL_API UPlayerActionComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
+	
+public:	
+	// Sets default values for this component's properties
+	UPlayerActionComponent();
+
+
+	UPROPERTY(BlueprintAssignable)
+	FOnSprintSignature OnSprintDelegate;
+
+
+protected:
+	// Called when the game starts
+	virtual void BeginPlay() override;
+
+public:	
+	// Called every frame
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	
 	ACharacter* CharacterRef;
 
 	class IMainPlayer* IPlayerRef;
@@ -33,26 +54,10 @@ class FINALUNREAL_API UPlayerActionComponent : public UActorComponent
 
 	UPROPERTY(EditAnywhere)
 	float WalkSpeed{ 500.0f }; 
-public:	
-	// Sets default values for this component's properties
-	UPlayerActionComponent();
-
-	UPROPERTY(BlueprintAssignable)
-	FOnSprintSignature OnSprintDelegate;
-
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
+	
 	UFUNCTION(BlueprintCallable)
 	void Sprint();
 
 	UFUNCTION(BlueprintCallable)
 	void Walk();
-
-	
 };

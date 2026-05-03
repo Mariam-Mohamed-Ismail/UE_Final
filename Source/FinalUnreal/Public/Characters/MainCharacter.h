@@ -35,6 +35,7 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	class UPlayerActionComponent* PlayerActionComp;
+	
 
 
 protected:
@@ -54,4 +55,6 @@ public:
 	virtual float GetDamage() override;
 
 	virtual bool HasEnoughStamina(float Cost) override;
+
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 };
